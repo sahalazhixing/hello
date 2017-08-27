@@ -1,0 +1,104 @@
+MongoDB安装
+下载：wget https://www.mongodb.com/dr/fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel62-3.2.7.tgz/download 
+解压：tar  xf mongodb-linux-x86_64-rhel62-3.2.7.tgz 
+ mv  mongodb-linux-x86_64-rhel62-3.2.7 /usr/local/mongodb
+指定同一时间最多可开启的文件数  ulimit -n 65535 
+用户最多可开启的程序数目  ulimit -u 65535
+创建数据目录，日志文件及目录并创建相应配置文件
+ mkdir -p /data/mongodb1 
+ mkdir -p /data/logs/mongodb 
+ touch /data/logs/mongodb/mongodb1.log
+ cd /usr/local/mongodb/ 
+ ls
+ mkdir conf 
+ vim conf/mongodb1.conf 
+port=27017 
+dbpath=/data/mongodb1 
+logpath=/data/logs/mongodb/mongodb1.log 
+logappend=true 
+fork=true 
+maxConns=5000 
+storageEngine=mmapv1 
+   
+启动MongoDB数据库，-f指定配置文件
+ /usr/local/mongodb/bin/mongod  -f  /usr/local/mongodb/conf/mongodb1.conf  
+  netstat -anpt |grep mongod 
+   ps aux |grep mongdb 
+ 设置开机自动启动   
+ vim /etc/rc.local 
+rm -f /data/mongodb1/mongod.lock 
+/usr/local/mongodb/bin/mongod -f /usr/local/mongodb/conf/mongodb1.conf    
+  连接数据库 
+  ln -s  /usr/local/mongodb/bin/* /usr/bin/
+  
+  
+  
+  复制集
+  # 连接服务器  
+changwen@ubuntu:~$ sudo /usr/local/mongoDB/bin/mongo 192.168.23.129:28001  
+  
+# 定义一个对象  
+> config = {  
+... _id:"changwen",  
+... members:[  
+... {_id:0,host:"192.168.23.129:28001"},  
+... {_id:1,host:"192.168.23.129:28002"},  
+... {_id:2,host:"192.168.23.129:28003"}]}  
+  
+  
+{  
+    "_id" : "changwen",  
+    "members" : [  
+        {  
+            "_id" : 0,  
+            "host" : "192.168.23.128:28001"  
+        },  
+        {  
+            "_id" : 1,  
+            "host" : "192.168.23.128:28002"  
+        },  
+        {  
+            "_id" : 2,  
+            "host" : "192.168.23.128:28003"  
+        }  
+    ]  
+}  
+  
+> config.members  
+...  
+  
+> config.members[2]  //在主节点创建内容，准备测试
+{ "_id" : 2, "host" : "192.168.23.128:28003" }  
+# 修改  
+> config.members[2]={ "_id" : 2, "host" : "192.168.23.128:28003" ,"arbiterOnly":true}  
+{ "_id" : 2, "host" : "192.168.23.128:28003", "arbiterOnly" : true }  
+  
+> rs.initiate(config)  
+{ "ok" : 1 }  
+  
+> use changwen  
+switched to db changwen  
+
+打开从节点 服务，可以看到主服务器上创建的数据已经存储到从服务器上
+[sql] view plain copy
+
+ 
+# 连接从节点服务   验证查看
+changwen@ubuntu:$ sudo /usr/local/mongoDB/bin/mongo 192.168.23.129:28002  
+  
+changwen:SECONDARY> show tables  
+2016-08-28T06:16:49.031-0700 E QUERY    [thread1] Error: listCollections failed: { "ok" : 0, "errmsg" : "not master and slaveOk=false", "code" : 13435 } :  
+_getErrorWithCode@src/mongo/shell/utils.js:25:13  
+  
+rs.slaveOk(1)或者ture  
+changwen:SECONDARY> rs.slaveOk(true)  
+  
+changwen:SECONDARY> show dbs  
+changwen  0.000GB  
+local     0.000GB  
+changwen:SECONDARY> db.changwen2.find()  
+{ "_id" : ObjectId("57c2f4a177f0574f2e53ba7d"), "name" : "changwen" } 
+
+  
+changwen:PRIMARY> db.changwen2.insert({"name":"changwen"})  
+WriteResult({ "nInserted" : 1 })  

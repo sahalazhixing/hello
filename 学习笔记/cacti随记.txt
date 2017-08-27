@@ -1,0 +1,125 @@
+
+服务器监控 cacti 
+
+cacti(仙人掌)是一款用PHP语言开发的监控软件，结合net-snmp来采集数据，RRDtool记录数据并绘制图片，以web页面的形式监控主机性能和流量。
+
+catcti 部署
+
+服务器端： 192.168.137.129
+
+客户端：192.168.137.185
+
+部署过程：
+服务器端：
+1.安装lamp环境
+[root@manager ~]# yum -y install httpd mysql mysql-server php php-mysql php-gd mysql-devel zlib freetype  libxml2 gd libjpeg
+
+[root@manager ~]# sed -i '276 s/#//' /etc/httpd/conf/httpd.conf 
+[root@manager ~]# sed -i '402 s/$/ index.php/' /etc/httpd/conf/httpd.conf 
+[root@manager ~]# awk 'NR==276||NR==402{print}' /etc/httpd/conf/httpd.conf 
+ServerName www.example.com:80
+DirectoryIndex index.html index.html.var index.php
+[root@manager ~]# for i in httpd mysqld
+> do
+> service $i start 
+> chkconfig $i on
+> done
+正在启动 httpd：                                           [确定]
+正在启动 mysqld：                                          [确定]
+[root@manager ~]# 
+[root@manager ~]# cat >> /var/www/html/test.php  <<EQF
+> >?php
+> phpinfo();
+> ?>
+> EQF
+
+
+2安装snmp数据采集工具
+[root@manager ~]# yum -y install net-snmp net-snmp-utils
+[root@manager ~]# service snmpd start
+正在启动 snmpd：                                           [确定]
+[root@manager ~]# chkconfig snmpd on
+
+3.安装rrdtool软件包
+[root@manager ~]# yum -y install cairo-devel  zlib libxml2 libxml2-devel glib2 glib2-devel  libpng libpng-devel freetype freetype-devel libart_lgpl pango pango-devel perl-CPAN
+[root@manager ~]# tar xf rrdtool-1.4.8.tar.gz -C /usr/src/
+[root@manager rrdtool-1.4.8]# ./configure --prefix=/usr/local/ && make && make install 
+
+
+4安装cacti
+[root@manager ~]# tar xf cacti-0.8.8b.tar.gz -C /usr/src/
+[root@manager cacti-0.8.8b]# mv /usr/src/cacti-0.8.8b/ /var/www/html/cacti
+[root@manager cacti-0.8.8b]# useradd -M -s /sbin/nologin cacti
+[root@manager cacti-0.8.8b]# chown -R cacti:cacti /var/www/html/cacti/
+
+5,创建cacti数据库用户，并授权
+mysql> create database cactidb default character set utf8;
+Query OK, 1 row affected (0.05 sec)
+
+mysql> grant all on cactidb.* to 'cacti'@localhost  identified by 'cacti'
+    -> ;
+Query OK, 0 rows affected, 1 warning (0.20 sec)
+
+mysql> flush privileges;
+Query OK, 0 rows affected (0.15 sec)
+
+
+使用cacti目录下的cacti.sql 脚本  ，导入预设的各种数据表
+[root@manager ~]#mysql  -ucacti    -pcacti   cactidb <  /var/www/html/cacti/cacti.sql
+
+6调整cacti数据库配置文件
+
+[root@manager ~]# vim /var/www/html/cacti/include/config.php 
+$database_type = "mysql";
+$database_default = "cactidb";      cacti数据库
+$database_hostname = "localhost";
+$database_username = "cacti";       cacti用户
+$database_password = "cacti";       cacti用户登录密码
+$database_port = "3306";            连接数据库端口号
+$database_ssl = false;
+$url_path = "/";   指定cacti目录相对于网站根目录的位置
+
+调整Apache主配置文件，修改默认发布路径
+[root@manager ~]# vim /etc/httpd/conf/httpd.conf 
+[root@manager ~]# awk 'NR==292||NR==317{print}' /etc/httpd/conf/httpd.conf 
+DocumentRoot "/var/www/html/cacti"
+<Directory "/var/www/html/cacti">
+[root@manager ~]# service httpd restart
+停止 httpd：                                               [确定]
+正在启动 httpd：                                           [确定]
+
+
+默认用户密码都是admin，之后再用cacti登录
+客户端配置(被监控端)
+1.安装net-snmpruanjianbao
+[root@slave1 ~]# yum -y install net-snmp lm_sensors
+2.修改snmp配置文件，设置SNMP访问权限
+[root@slave1 ~]# cp /etc/snmp/snmpd.conf{,.`date +%F`}
+[root@slave1 ~]# vim /etc/snmp/snmpd.conf 
+com2sec notConfigUser  192.168.137.129       public
+ccess  notConfigGroup ""      any       noauth    exact  all none none
+view all    included  .1                               80
+3.调整防火墙策略允许cacti服务器开启SNMP服务并通过
+[root@slave1 ~]# iptables -I INPUT -s 192.168.137.129 -p udp --dport 161 -j ACCEPT
+[root@slave1 ~]# iptables -I OUTPUT -s 192.168.137.129 -p udp --sport 161 -j ACCEPT
+[root@slave1 ~]# iptables -nvL --line
+[root@slave1 ~]# /etc/init.d/iptables save
+启动SNMP服务
+[root@slave1 ~]# service snmpd start
+正在启动 snmpd：                                           [确定]
+[root@slave1 ~]# chkconfig snmpd on
+[root@slave1 ~]# netstat -anptu |grep 161
+udp        0      0 0.0.0.0:161                 0.0.0.0:*                               2393/snmpd   
+
+添加监控的主机
+
+
+
+
+
+
+
+
+
+
+

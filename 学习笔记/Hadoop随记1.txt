@@ -1,0 +1,296 @@
+Hadoop完全分布式模式部署
+
+环境：centos6.5
+hadoop-0.20.2.tar.gz
+manager  192.168.137.129
+master   192.168.137.131
+slave1   192.168.137.185
+slave2   192.168.137.202
+
+
+1.配置hosts文件
+[root@bogon ~]# vim /etc/hosts
+
+192.168.137.129  manager
+192.168.137.131  master
+192.168.137.185  slave1
+192.168.137.202  slave2
+
+修改主机名
+[root@bogon ~]# vim /etc/sysconfig/network
+[root@bogon ~]# hostname master
+[root@bogon ~]# bash
+2.建立Hadoop运行账号grid 密码123
+[root@bogon ~]#useradd grid  && echo "123" |passwd --stdin  grid 
+
+
+3.配置ssh免密码连入
+在每台机上执行该脚本
+[root@bogon ~]# vim ssh.sh 
+
+#!/bin/bash
+#ssh传公钥的脚本
+
+#创建密钥对，留私钥，发送公钥
+ip=$(ifconfig eth0 |awk -F'[ :]+' '/inet addr/{print $4}')
+manager="192.168.137.129"
+master="192.168.137.131"
+slave1="192.168.137.185"
+slave2="192.168.137.202"
+testkey=$(ls .ssh/ | egrep "id_rsa|id_rsa.pub" --color=auto)
+clear
+set -x
+echo -n "本地ip地址:$ip"
+if test  $testkey = id_rsa and $testkey = id_rsa.pub
+then
+     echo "密钥对已经创建"
+else
+        ssh-keygen -t rsa -P "" -f ~/.ssh/id_rsa
+fi
+#开始发送公钥
+ssh-copy-id -i .ssh/id_rsa.pub root@$manager
+ssh-copy-id -i .ssh/id_rsa.pub root@$master
+ssh-copy-id -i .ssh/id_rsa.pub root@$slave1
+ssh-copy-id -i .ssh/id_rsa.pub root@$slave2
+#查看公钥
+cat .ssh/authorized_keys
+set +x
+
+注意：这是在root下的脚本，若是使用Hadoop用户grid，则把脚本中的root改为grid，再执行
+
+[grid@slave2 ~]$ mkdir .ssh
+[grid@slave2 ~]$ vim ssh.sh 
+[grid@slave2 ~]$ sh ssh.sh 
++ echo -n $'\346\234\254\345\234\260ip\345\234\260\345\235\200:192.168.137.202'
+本地ip地址:192.168.137.202+ test = id_rsa and = id_rsa.pub
+ssh.sh: line 14: test: too many arguments
++ ssh-keygen -t rsa -P '' -f /home/grid/.ssh/id_rsa
+Generating public/private rsa key pair.
+Your identification has been saved in /home/grid/.ssh/id_rsa.
+Your public key has been saved in /home/grid/.ssh/id_rsa.pub.
+The key fingerprint is:
+41:9a:28:75:08:54:f1:8e:31:60:89:fb:d3:be:4b:1e grid@slave2
+The key's randomart image is:
++--[ RSA 2048]----+
+| o=++o. .        |
+|...o.+ +         |
+| .. + + .        |
+|.  . =   .       |
+| . .. . S        |
+|  o .            |
+|   oE            |
+|   o..           |
+|    +o           |
++-----------------+
++ ssh-copy-id -i .ssh/id_rsa.pub grid@192.168.137.129
+The authenticity of host '192.168.137.129 (192.168.137.129)' can't be established.
+RSA key fingerprint is c8:87:26:25:ae:94:e1:ad:a1:f0:56:d7:15:95:2e:2b.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.137.129' (RSA) to the list of known hosts.
+grid@192.168.137.129's password: 
+Now try logging into the machine, with "ssh 'grid@192.168.137.129'", and check in:
+
+  .ssh/authorized_keys
+
+to make sure we haven't added extra keys that you weren't expecting.
+
++ ssh-copy-id -i .ssh/id_rsa.pub grid@192.168.137.131
+The authenticity of host '192.168.137.131 (192.168.137.131)' can't be established.
+RSA key fingerprint is 90:af:a2:50:e5:2e:b2:1b:e7:57:8b:3a:34:78:e2:aa.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.137.131' (RSA) to the list of known hosts.
+grid@192.168.137.131's password: 
+Now try logging into the machine, with "ssh 'grid@192.168.137.131'", and check in:
+
+  .ssh/authorized_keys
+
+to make sure we haven't added extra keys that you weren't expecting.
+
++ ssh-copy-id -i .ssh/id_rsa.pub grid@192.168.137.185
+The authenticity of host '192.168.137.185 (192.168.137.185)' can't be established.
+RSA key fingerprint is 7c:9d:90:fe:d4:93:91:90:44:fa:18:45:b2:93:39:07.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.137.185' (RSA) to the list of known hosts.
+grid@192.168.137.185's password: 
+Now try logging into the machine, with "ssh 'grid@192.168.137.185'", and check in:
+
+  .ssh/authorized_keys
+
+to make sure we haven't added extra keys that you weren't expecting.
+
++ ssh-copy-id -i .ssh/id_rsa.pub grid@192.168.137.202
+The authenticity of host '192.168.137.202 (192.168.137.202)' can't be established.
+RSA key fingerprint is b3:35:c1:9a:b1:30:74:e1:60:dd:f0:a0:e6:d1:a7:f3.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.137.202' (RSA) to the list of known hosts.
+grid@192.168.137.202's password: 
+Now try logging into the machine, with "ssh 'grid@192.168.137.202'", and check in:
+
+  .ssh/authorized_keys
+
+to make sure we haven't added extra keys that you weren't expecting.
+
++ cat .ssh/authorized_keys
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAvuXUjp16nvV8OrNGkO5zOe4RUKwdgjs38SVQCelHXg3zkTKBwRn8wpuTv4EuiaSQTnvZca7tKJc3j7A9IpAZq2/TmxCkXxSX3dqGptQnJkS9Z7VPYblrWtdLdPsRJAprc9uaNIc1xS00V8zmCtYWX7+1km4F+KA3QB1pB8sEm9mq5nfU6GFmvnsPHUZU20XEB1lSO7IV15L0F+jCgzfgf8cCqiaBzbwvh9cg6flPsi/gqnLAtnkk7JKn2IuAQsfH3NqonSV4tI1lSMRNu8Lpkxj8ju/gNcqeq+2hHyEj+dtiWMn0TkLHaBZN5WsuxuCl3wIndaI7vsQSNGKggUSC5w== grid@manager
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAzB0QZ2JFar1iimqX1Q3ZhOKx5Rl0VSUFcTnDq+z9JC43q8POpp5kgk23dLSU1ExugZOcnflGQT2aWe7IcCQT4MwNdipBAQTak0zILQMgqlmiKs2EGmsq/KNPJeFHy4iZ9+m3lh44dtYlL6QlIB2iCgPwNvvqUOdgQfypS824D5xZyCco8FcEKlVjQgS6tKFycxk0cw+9hy+DZ0MFkocScR0pJI/wWDvsMJZkBrnvOQ5AG0CDAwWzTMRl+AlONT5LBwsq6fzrER25eEy0fBR1R7uF7/D9SpuKvXL68O+Xu6RWvw4UVHPYfKAG5Y7fxgbXYic0N3deBf8KbqpYwj2kJw== grid@master
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAyKv2HH1lqwfnJVyjHgOLCRsS9D+vRaQ+IE8D2pV5PgumJH9wEVPd99Ui1tvCvd1nrgmNuZ6DMlNurp7PXq3cfodV+nsuUa/AYY1vplZWLDKqoA1R+BC76U9Zwoom4n9GRT51xnotc+ByVRmyIuPjtp+XFqCLr4E0JUzqXQd6F0CwA+lKtgqnMgfPADlRRI8q/MSdH7eT8CS70YEOsMJABtVs0YhYFGi5oNPUN9qruIeZdpNd+YRssGcZZODhVqdFiRga6qQ3DWx0NOFXbVr85QNMz4z8GdSfeCKe87o2rqmsC8O1SYXMjFzWuJnoojToYV5L8dfLoIH/E7B16bjXow== grid@slave1
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArbYQESmDrnMmj9X4/Pm3QkCkKx+1FhZpaNdyTkVUtS7OAjfBDl2oNn0O5ZVWyDUiiNbkQgFsoANOmtqO7elWIplN+SyPQEkAu3QsOtNlqeA9cj5GCYRLaQEBJdiwQy+3jb6nb5MOO7QwKt1R9/Z+S7qoYKoEi4cBtvmS8Donn1Sl6BP+Z+updmoep7U3r+gyzN4+kKD20KmNOR4bgoz5GlDyfrBv6HvSknlUKxF7qDg0gsN+ZwMNhs9SwAIC4udgSYtRCVqSPp7Kbfx3CZmgZtSNeE9NQJWowqVQnnZVt3RvNLBb2HAEajRTempzzBprOjG23nVWrzc8T+ZbtTkdzQ== grid@slave2
+
+下载并解压Hadoop-0.20.2.tar.gz
+
+[root@bogon ~]# for i in 192.168.137.129 192.168.137.185 192.168.137.202
+> do
+> scp /home/grid/hadoop-0.20.2.tar.gz $i:/home/grid/
+> done
+hadoop-0.20.2.tar.gz                                                                                                 100%   43MB  42.5MB/s   00:01    
+hadoop-0.20.2.tar.gz                                                                                                 100%   43MB  42.5MB/s   00:01    
+hadoop-0.20.2.tar.gz      
+                                                                                           100%   43MB  42.5MB/s   00:01    
+[grid@manager ~]$ cd hadoop-0.20.2
+[grid@manager hadoop-0.20.2]$ cd conf
+[grid@manager conf]$ ls
+capacity-scheduler.xml  core-site.xml  hadoop-metrics.properties  hdfs-site.xml     mapred-site.xml  slaves                  ssl-server.xml.example
+configuration.xsl       hadoop-env.sh  hadoop-policy.xml          log4j.properties  masters          ssl-client.xml.example
+[grid@manager conf]$ 
+
+修改core-site.xml文件
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+<property>
+<name>fs.default.name</name>
+<value>hdfs://localhost:9000</value>
+</property>
+</configuration>
+[grid@manager conf]$ cat hdfs-site.xml 
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+修改hdfs-site.xml 文件 
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+<property>
+<name>dfs.replication</name>
+<value>2</value>
+</property>
+</configuration>
+
+修改 mapred-site.xml 文件
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+<property>
+<name>mapred.job.tracker</name>
+<value>localhost:9001</value>
+</property>
+</configuration>
+
+修改master和slave文件
+[grid@slave2 conf]$ vim slaves 
+master
+slave1
+slave2
+
+[grid@slave2 conf]$ vim masters 
+manager
+
+yum安装Java
+[root@manager ~]# yum -y install java
+[root@manager ~]# which java
+/usr/bin/java
+
+修改hadoop-env.sh 文件
+[grid@manager conf]$ vim hadoop-env.sh 
+export JAVA_HOME=/usr/bin/java
+
+
+
+
+向manager复制Hadoop
+[grid@slave2 ~]$ cd hadoop-0.20.2/conf/
+[grid@slave2 conf]$ scp 192.168.137.129:/home/grid/hadoop-0.20.2/conf/*  .
+capacity-scheduler.xml                                                                                               100% 3936     3.8KB/s   00:00    
+configuration.xsl                                                                                                    100%  535     0.5KB/s   00:00    
+core-site.xml                                                                                                        100%  266     0.3KB/s   00:00    
+hadoop-env.sh                                                                                                        100% 2235     2.2KB/s   00:00    
+hadoop-metrics.properties                                                                                            100% 1245     1.2KB/s   00:00    
+hadoop-policy.xml                                                                                                    100% 4190     4.1KB/s   00:00    
+hdfs-site.xml                                                                                                        100%  246     0.2KB/s   00:00    
+log4j.properties                                                                                                     100% 2815     2.8KB/s   00:00    
+mapred-site.xml                                                                                                      100%  262     0.3KB/s   00:00    
+masters                                                                                                              100%    8     0.0KB/s   00:00    
+slaves                                                                                                               100%   22     0.0KB/s   00:00    
+ssl-client.xml.example                                                                                               100% 1243     1.2KB/s   00:00    
+ssl-server.xml.example                                                                                               100% 1195     1.2KB/s   00:00   
+
+
+
+格式化分布式文件系统
+
+
+
+
+
+
+
+对刚安装好的Hadoop集群做测试
+创建目录，创建文件
+mkdir input  
+echo "hello world " >/input/test1.txt
+echo "hello hadoop" >/input/test2.txt
+
+进入hadoop安装目录中
+cd  hadoop-0.20.2
+hadoop dfs  -put ../input in
+查看in目录下的文件
+hadoop  dfs -ls ./in
+提交mapreduce中的java程序
+hadoop jar hadoop-0.20.0-examplesjar  wordcount in out 
+查看
+hadoop dfs -cat ./out/*
+
+方法二：
+http://192.168.137.129:50030/jobtracker.jsp
+
+查看监控
+http://192.168.137.129:50070/dfshealth.jsp
+
+
+只有进入hadoop系统中才能查看具体的目录和文件名称及内容，否则你会看到一些以blk开头的文件
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

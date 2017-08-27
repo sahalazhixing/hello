@@ -1,0 +1,61 @@
+HDFS 是Hadoop中用于存储        其实Hadoop就是个goolge  的山寨版
+
+hdfs 设计的基础和目标
+硬件上的错误经常有，hdfs支持错误出现
+
+
+hdfs 的体系结构
+  namenode  管理文件系统的命名空间
+  记录每个文件数据块在datanode 的位置和副本信息
+  datanode  管理所在节点的存储，文件由数据块组成 典型的块大小是64MB
+  镜像文件
+  事务日志
+   secondary namenode  辅助名称节点 
+   
+   
+ hdfs 的高可用
+ yong'yu副本策略
+ 机架感知    集群一般放在不同的机架机架间的带宽小于机架内的带宽（谷歌不存在带宽问题，因为运营商是给谷歌钱的 ）
+ 心跳机制    namenode 定期从datanode 接收心跳信号和块报告 若接收不到则默认为宕机，没有I/O进程
+ 校验和  每个数据块都产生校验和
+ 回收站  与windows中的回收站一样的功能
+ 
+ 
+hadoop没有当前目录的概念，也没有cd的用法
+列出hefs 下的文件
+hadoop  dfs -ls
+
+上传文件到hdfs
+hadoop  dfs -put ../a   b
+
+下载hdfs文件到本地
+hadoop  dfs  -get abc ./x
+
+删除hdfs的文档
+hadoop  dfs  -rmr  abc
+ 
+进入和退出安全模式
+hadoop  dfsadmin  -safemode enter
+hadoop  dfsadmin  -safemode leave 
+ 
+怎么添加新的节点
+1.确定hadoop已经安装好
+2.namenode 的有关的配置文件复制到该节点
+3.修改master和slave文件，增加该节点
+4.设置ssh免密码登陆
+5.启动该节点 hadoop-daemon.sh start-datanode
+6.运行start-balancer.sh 进行数据负载均衡   数据达到几十G内存实现各个datanode数据块的均匀分布以后需要几十分钟时间，比较耗时间
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

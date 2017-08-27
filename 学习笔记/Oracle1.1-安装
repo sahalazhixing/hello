@@ -1,0 +1,83 @@
+[root@tomcat2 ~]# groupadd oinstall
+[root@tomcat2 ~]# groupadd dba
+[root@tomcat2 ~]# useradd -g oinstall -G dba oracle
+[root@tomcat2 ~]# echo "123456" |passwd --stdin oracle 
+更改用户 oracle 的密码 。
+passwd： 所有的身份验证令牌已经成功更新。
+[root@tomcat2 ~]# mkdir  -pv /u01/oracle
+mkdir: 已创建目录 "/u01"
+mkdir: 已创建目录 "/u01/oracle"
+[root@tomcat2 ~]# chown -R oracle:oinstall /u01/
+[root@tomcat2 ~]# chmod -R 775 /u01/
+[root@tomcat2 ~]# unzip linux.x64_11gR2_database_1of2.zip
+[root@tomcat2 ~]# unzip linux.x64_11gR2_database_2of2.zip
+yum -y install binutils compat-libstdc++-33 compat-libstdc++ \
+elfutils-libelf elfutils-libelf-devel gcc gcc-c++ \
+glibc glibc-common glibc-devel glibc-headers ksh \
+libaio libaio-devel libgcc libstdc++ libstdc++-devel\
+ make sysstat unixODBC-devel  libc.so.6
+若安装失败，安装公网yum源
+[root@tomcat2 ~]# curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-6.repo 
+[root@tomcat2 ~]# rpm -ivh pdksh-5.2.14-30.i386.rpm --nodeps
+warning: pdksh-5.2.14-30.i386.rpm: Header V3 DSA/SHA1 Signature, key ID 4f2a6fd2: NOKEY
+Preparing...                ########################################### [100%]
+   1:pdksh                  ########################################### [100%]
+
+   修改内核参数   
+[root@tomcat2 ~]#vim /etc/sysctl.conf  //尾行添加 
+kernel.shmmax = 68719476736  
+ 
+kernel.shmall = 4294967296
+ 
+fs.aio-max-nr = 1048576
+
+fs.file-max = 6815744
+
+kernel.shmmni = 4096
+
+kernel.sem = 250 32000 100 128
+
+net.ipv4.ip_local_port_range = 9000 65500
+
+net.core.rmem_default = 262144
+
+net.core.rmem_max = 4194304
+
+net.core.wmem_default = 262144
+
+net.core.wmem_max = 1048586
+   
+[root@tomcat2 ~]# sysctl -p
+   
+pam 认证
+[root@tomcat2 ~]# vim /etc/pam.d/login //尾行添加
+   session    required     pam_limits.so
+
+调整连接数
+[root@tomcat2 ~]#vim /etc/security/limits.conf
+oracle soft nproc 8192
+oracle hard nproc 16384
+oracle soft nofile 32768
+oracle hard nofile  65535
+
+重启并登陆oracle用户
+注意：这里的oracle 必须是英文安装，否则乱码
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

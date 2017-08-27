@@ -1,0 +1,33 @@
+一.git创建项目
+下载 git 
+git 的使用
+cmd  window 命令行界面
+bash linux 命令行 界面
+gui  windows  图形界面 （在git命令不熟悉的情况下，建议使用该界面了解git的使用）
+
+gui :
+创建仓库 单击git-gui  ->填写仓库名  ->create
+进入 repository
+单击 exporing working copy 进入一个新的界面创建一个文本文件 例如 gittest.txt
+单击 Unstaged Changes 出现 gittest.txt
+单击 Rescan -> Stage Changed -> commit
+查看  repository ——>  vasulize master's history
+重新修改 按照以上方法进入 gittest.txt中进行编辑，保存，其他的步骤一样
+
+二.在GitHub上托管项目
+注册GitHub账号
+创建一个公开的仓库
+
+设置：
+自己域名  username.github.io
+自己博客网站的模板 
+
+代码：
+创建分支，默认master，也可以多创建几个分支如 readme.edit writeme.edit等
+在每个分支中写代码
+
+拉请求：
+这个一般在团队开发项目中会用到
+
+
+三.在GitHub创建自己的个人博客

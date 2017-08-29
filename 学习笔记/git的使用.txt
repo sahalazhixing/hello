@@ -31,3 +31,134 @@ gui :
 
 
 三.在GitHub创建自己的个人博客
+
+方法一：安装jekyll bundle 工具 在ruby 环境下自动生成jeyll blog网站的目录，在_post目录下修改或添加blog文章，用git 提交到gitbub上，可以用在github上早已设置好的网站域名
+
+环境准备
+github 账号
+git 环境 
+ruby 开发环境 下载地址： https://rubyinstaller.org/downloads/
+rubyinstaller-2.4.1-2-x64.exe
+DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe
+
+C:\Users\l>gem install bundler
+Fetching: bundler-1.15.4.gem (100%)
+Successfully installed bundler-1.15.4
+Parsing documentation for bundler-1.15.4
+Installing ri documentation for bundler-1.15.4
+Done installing documentation for bundler after 21 seconds
+1 gem installed
+
+C:\Users\l>gem install jekyll      //安装jekyll 免费的blog生成工具
+C:\Users\l>gem install rdiscount   //Rdiscount，这个用来解析Markdown标记的包
+
+建立自己的第一个博客：
+G:\>jekyll new blog  blog 为博客的文件名 
+Running bundle install in G:/blog...
+  Bundler: Fetching gem metadata from https://rubygems.org/...........
+  Bundler: Fetching version metadata from https://rubygems.org/..
+  Bundler: Fetching dependency metadata from https://rubygems.org/.
+  Bundler: Resolving dependencies...
+  Bundler: Using public_suffix 3.0.0
+  Bundler: Using bundler 1.15.4
+  Bundler: Using colorator 1.1.0
+  Bundler: Using ffi 1.9.18 (x64-min
+  .......
+
+  C盘的文件夹下也会出现相应的blog文件
+
+进入blog目录下启动jekyll服务  
+G:\>cd blog
+
+G:\blog>jekyll serve  //Jekyll还附带一个内置的开发服务器，可以让您预览本地在浏览器中生成的站点。
+
+
+Nokogiri宝石安装
+G:\blog> gem install nokogiri
+Fetching: mini_portile2-2.2.0.gem (100%)
+Successfully installed mini_portile2-2.2.0
+Fetching: nokogiri-1.8.0-x64-mingw32.gem (100%)
+Nokogiri is built with the packaged libraries: libxml2-2.9.4, libxslt-1.1.29, zlib-1.2.11, libiconv-1.15.
+Successfully installed nokogiri-1.8.0-x64-mingw32
+........
+
+安装github-pages永久链接
+
+打开命令提示符并安装Bundler：gem install bundler
+Gemfile在您的博客的根目录中创建一个没有扩展名的文件
+将两行复制并粘贴到文件中：
+source 'https://rubygems.org'
+gem 'github-pages', group: :jekyll_plugins
+注意：我们使用不安全的连接，因为SSL在Ruby版本中抛出异常
+打开命令提示符，定位您的本地博客库根目录，并安装github-pages： bundle install
+
+
+不兼容的字符编码"错误"
+chcp  65001
+
+作为blog的域名网址
+
+
+
+使用jekyll写博文
+
+你可能喜欢markdown或html来写博文，都可以，但是博文文件的命名规则要服从下面的规则：
+
+ year-month-title.markup //markup为你的文件格式的后缀名
+在你的文章头部添加yaml头信息
+
+---
+layout: post
+title:  "Jekyll+Github搭建个人博客"
+date:   2017-01-14 15:03:25
+categories: original
+---
+写上自己的博文内容，将这个文件保存在blog里面的_posts目录里面即可。在重启jekyll内置服务器，刷新页面：http://localhost:4000，如果没有，可以先输入：
+
+ jekyll build 
+重新生成页面，在启动服务器，这样就可以在页面看到自己添加的博文的标题了。
+这就是在本地搭建jekyll和写博文的大致过程了，相信还有其他的搭建方法，但是估计都是大同小异吧。
+
+方法二：手动创建
+创建git项目目录这个与github 上的存储仓库名称要一致，在项目分支master中创建jerlly  ,jerlly目录结构都是自己建立
+
+l@DESKTOP-VO1SD99 MINGW32 ~
+$ mkdir my_jekyllblog
+
+l@DESKTOP-VO1SD99 MINGW32 ~
+$ cd my_jekyllblog
+
+l@DESKTOP-VO1SD99 MINGW32 ~/my_jekyllblog
+$ git init
+Initialized empty Git repository in C:/Users/l/my_jekyllblog/.git/
+
+l@DESKTOP-VO1SD99 MINGW32 ~/my_jekyllblog (master)
+$ git checkout  --orphan  my_gitpages
+Switched to a new branch 'my_gitpages'
+
+l@DESKTOP-VO1SD99 MINGW32 ~/my_jekyllblog (my_gitpages)
+$
+
+必须有一个yaml文件头，用来设置一些元数据。它用三根短划线"---"，标记开始和结束
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
